@@ -1,0 +1,29 @@
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/config:/app/config
+    environment:
+      APP_ENV: development
+      APP_DEBUG: "true"
+      APP_LOG_LEVEL: DEBUG
+    command: ["uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
+
+  worker:
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/config:/app/config
+    environment:
+      APP_ENV: development
+      APP_LOG_LEVEL: DEBUG

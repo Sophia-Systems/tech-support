@@ -1,0 +1,20 @@
+retrieval:
+  semantic_top_k: 20
+  keyword_top_k: 20
+  rrf_k: 60
+  rerank_top_k: 5
+  chunk_size: 512
+  chunk_overlap: 64
+
+confidence:
+  answer_threshold: 0.85
+  caveat_threshold: 0.60
+  decline_threshold: 0.35
+  minimum_relevance: 0.15
+  ambiguity_score_variance: 0.05
+
+persona:
+  company_name: "our company"
+  product_name: "our product"
+  tone: "professional and helpful"
+  template_path: "persona/default.yaml"

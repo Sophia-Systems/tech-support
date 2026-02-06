@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Ruff
+.ruff_cache/
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Alembic
+backend/alembic/versions/__pycache__/
+
+# Data (keep structure, ignore large files)
+data/manuals/*.pdf
+data/manuals/*.docx
+
+# uv
+*.lock
+!uv.lock
