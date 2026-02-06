@@ -33,3 +33,16 @@ export interface SSEEvent {
   event: "metadata" | "delta" | "sources" | "done" | "error";
   data: string;
 }
+
+export interface DocumentResponse {
+  id: string;
+  title: string;
+  source_type: string;
+  source_uri: string;
+  status: "pending" | "processing" | "ready" | "error";
+  chunk_count: number;
+  metadata_: Record<string, unknown>;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+}
