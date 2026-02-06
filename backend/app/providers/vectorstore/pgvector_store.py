@@ -25,11 +25,9 @@ class PgVectorStore:
         async with self._session_factory() as session:
             for id_, emb, txt, meta in zip(ids, embeddings, texts, metadatas):
                 await session.execute(
-                    text("""
-                        UPDATE document_chunks
-                        SET embedding = :embedding
-                        WHERE id = :id
-                    """),
+                    text(
+                        "UPDATE document_chunks SET embedding = CAST(:embedding AS vector) WHERE id = CAST(:id AS uuid)"
+                    ),
                     {"id": id_, "embedding": str(emb)},
                 )
             await session.commit()
@@ -40,17 +38,18 @@ class PgVectorStore:
         top_k: int = 10,
         filter_metadata: dict[str, str | int | float | bool] | None = None,
     ) -> list[VectorSearchResult]:
+        embedding_str = str(query_embedding)
         async with self._session_factory() as session:
             result = await session.execute(
-                text("""
-                    SELECT id::text, text, metadata,
-                           1 - (embedding <=> :embedding::vector) AS score
-                    FROM document_chunks
-                    WHERE embedding IS NOT NULL
-                    ORDER BY embedding <=> :embedding::vector
-                    LIMIT :top_k
-                """),
-                {"embedding": str(query_embedding), "top_k": top_k},
+                text(
+                    "SELECT CAST(id AS text), text, metadata,"
+                    " 1 - (embedding <=> CAST(:embedding AS vector)) AS score"
+                    " FROM document_chunks"
+                    " WHERE embedding IS NOT NULL"
+                    " ORDER BY embedding <=> CAST(:embedding AS vector)"
+                    " LIMIT :top_k"
+                ),
+                {"embedding": embedding_str, "top_k": top_k},
             )
             rows = result.fetchall()
             return [
@@ -66,7 +65,9 @@ class PgVectorStore:
     async def delete(self, ids: list[str]) -> None:
         async with self._session_factory() as session:
             await session.execute(
-                text("UPDATE document_chunks SET embedding = NULL WHERE id::text = ANY(:ids)"),
+                text(
+                    "UPDATE document_chunks SET embedding = NULL WHERE CAST(id AS text) = ANY(:ids)"
+                ),
                 {"ids": ids},
             )
             await session.commit()

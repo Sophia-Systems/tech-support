@@ -50,7 +50,7 @@ def upgrade() -> None:
         ),
         sa.Column("chunk_index", sa.Integer, nullable=False),
         sa.Column("text", sa.Text, nullable=False),
-        sa.Column("embedding", Vector(1536), nullable=True),
+        sa.Column("embedding", Vector(384), nullable=True),
         sa.Column("tsv", sa.dialects.postgresql.TSVECTOR, nullable=True),
         sa.Column("metadata", sa.dialects.postgresql.JSONB, nullable=False, server_default="{}"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),

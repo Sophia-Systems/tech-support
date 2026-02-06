@@ -40,7 +40,7 @@ class DocumentChunk(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
     chunk_index: Mapped[int] = mapped_column(nullable=False)
     text: Mapped[str] = mapped_column(Text, nullable=False)
-    embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(384), nullable=True)
     tsv: Mapped[str | None] = mapped_column(TSVECTOR, nullable=True)
     metadata_: Mapped[dict] = mapped_column("metadata", JSONB, nullable=False, default=dict)
 

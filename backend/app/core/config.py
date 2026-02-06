@@ -10,6 +10,8 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _CONFIG_DIR = Path(__file__).resolve().parent.parent.parent / "config"
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+_ENV_FILE = _PROJECT_ROOT / ".env"
 
 
 def _load_yaml(path: Path) -> dict[str, Any]:
@@ -20,7 +22,7 @@ def _load_yaml(path: Path) -> dict[str, Any]:
 
 
 class PostgresSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="POSTGRES_")
+    model_config = SettingsConfigDict(env_prefix="POSTGRES_", env_file=_ENV_FILE, extra="ignore")
 
     host: str = "localhost"
     port: int = 5432
@@ -38,13 +40,13 @@ class PostgresSettings(BaseSettings):
 
 
 class RedisSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="REDIS_")
+    model_config = SettingsConfigDict(env_prefix="REDIS_", env_file=_ENV_FILE, extra="ignore")
 
     url: str = "redis://localhost:6379/0"
 
 
 class LLMSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="LLM_")
+    model_config = SettingsConfigDict(env_prefix="LLM_", env_file=_ENV_FILE, extra="ignore")
 
     model: str = "gpt-4o-mini"
     api_key: str = ""
@@ -54,7 +56,7 @@ class LLMSettings(BaseSettings):
 
 
 class EmbeddingSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="EMBEDDING_")
+    model_config = SettingsConfigDict(env_prefix="EMBEDDING_", env_file=_ENV_FILE, extra="ignore")
 
     provider: str = "litellm"
     model: str = "text-embedding-3-small"
@@ -63,7 +65,7 @@ class EmbeddingSettings(BaseSettings):
 
 
 class RerankerSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="RERANKER_")
+    model_config = SettingsConfigDict(env_prefix="RERANKER_", env_file=_ENV_FILE, extra="ignore")
 
     provider: str = "cross-encoder"
     model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
@@ -71,13 +73,13 @@ class RerankerSettings(BaseSettings):
 
 
 class VectorStoreSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="VECTORSTORE_")
+    model_config = SettingsConfigDict(env_prefix="VECTORSTORE_", env_file=_ENV_FILE, extra="ignore")
 
     provider: str = "pgvector"
 
 
 class LangFuseSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="LANGFUSE_")
+    model_config = SettingsConfigDict(env_prefix="LANGFUSE_", env_file=_ENV_FILE, extra="ignore")
 
     public_key: str = ""
     secret_key: str = ""
@@ -86,13 +88,13 @@ class LangFuseSettings(BaseSettings):
 
 
 class EscalationSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="ESCALATION_")
+    model_config = SettingsConfigDict(env_prefix="ESCALATION_", env_file=_ENV_FILE, extra="ignore")
 
     webhook_url: str = ""
 
 
 class AppSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="APP_")
+    model_config = SettingsConfigDict(env_prefix="APP_", env_file=_ENV_FILE, extra="ignore")
 
     env: str = "development"
     debug: bool = False

@@ -21,14 +21,14 @@ class PostgresFTSProvider:
     ) -> list[KeywordSearchResult]:
         async with self._session_factory() as session:
             result = await session.execute(
-                text("""
-                    SELECT id::text, text, metadata,
-                           ts_rank(tsv, plainto_tsquery('english', :query)) AS score
-                    FROM document_chunks
-                    WHERE tsv @@ plainto_tsquery('english', :query)
-                    ORDER BY score DESC
-                    LIMIT :top_k
-                """),
+                text(
+                    "SELECT CAST(id AS text), text, metadata,"
+                    " ts_rank(tsv, plainto_tsquery('english', :query)) AS score"
+                    " FROM document_chunks"
+                    " WHERE tsv @@ plainto_tsquery('english', :query)"
+                    " ORDER BY score DESC"
+                    " LIMIT :top_k"
+                ),
                 {"query": query, "top_k": top_k},
             )
             rows = result.fetchall()
