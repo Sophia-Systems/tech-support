@@ -274,19 +274,19 @@ Each document format has a registered `DocumentLoader`. Adding a new format mean
 ### Chat
 Streaming responses via SSE. Answers render token-by-token.
 
-<img src="chat-page.png" alt="Chat interface" width="100%" />
+<img src="docs/images/chat-page.png" alt="Chat interface" width="100%" />
 
 ### Knowledge Base
 Upload documents, add URLs, track ingestion status and chunk counts.
 
-<img src="resources-page.png" alt="Knowledge base" width="100%" />
+<img src="docs/images/resources-page.png" alt="Knowledge base" width="100%" />
 
 ### Test Panel
 Pre-defined test suites validate pipeline behavior across all confidence tiers.
 
-<img src="test-page.png" alt="Test panel" width="100%" />
+<img src="docs/images/test-page.png" alt="Test panel" width="100%" />
 
-<img src="test-result-expanded.png" alt="Test result detail" width="100%" />
+<img src="docs/images/test-result-expanded.png" alt="Test result detail" width="100%" />
 
 ---
 
