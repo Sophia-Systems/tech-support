@@ -1,40 +1,22 @@
-<p align="center">
-  <strong>TECH SUPPORT</strong><br>
-  <em>Structured Omnichannel Platform for Helpful Intelligent Assistance</em>
-</p>
+# Tech Support
 
-<p align="center">
-  A production-grade RAG framework for deploying technical customer support agents<br>
-  that never hallucinate, always cite sources, and know when to ask for help.
-</p>
+Production RAG framework for technical customer support. Ingests documentation (PDF, markdown, web), answers questions grounded in that documentation, and escalates to humans when it can't.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/python-3.12+-blue?style=flat-square" alt="Python" />
-  <img src="https://img.shields.io/badge/fastapi-0.115+-009688?style=flat-square" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/react-19-61dafb?style=flat-square" alt="React" />
-  <img src="https://img.shields.io/badge/postgres-pgvector-336791?style=flat-square" alt="pgvector" />
-  <img src="https://img.shields.io/badge/license-proprietary-lightgrey?style=flat-square" alt="License" />
-</p>
+Python 3.12 / FastAPI / React 19 / PostgreSQL (pgvector) / Docker
 
 ---
 
-## The Problem
+## Design Principles
 
-Technical support is expensive, inconsistent, and doesn't scale. AI chatbots solve the scale problem but introduce a worse one: **hallucination**. A customer asks how to replace a dryer belt and the bot confidently invents a procedure that doesn't exist. That's not support — that's a liability.
+**Say "I don't know."** The system is a retrieval pipeline with an LLM for synthesis — not a chatbot with a knowledge base bolted on. It only generates answers from retrieved context. When retrieval confidence is low, it declines or escalates rather than letting the LLM improvise. This is the foundational constraint; every other decision follows from it.
 
-## The Philosophy
+**Stay in your lane.** The bot is topic-fenced to its knowledge base. Off-topic queries get a redirect, not a general-knowledge answer. Prompt injection attempts get a polite refusal. The LLM is never invoked without grounding context, so it has no opportunity to hallucinate from training data.
 
-Sophia is built on a single principle: **it is always better to say "I don't know" than to make something up.**
+**Ask, don't guess.** When a query is ambiguous — maps to multiple topics with similar relevance scores — the system asks a clarifying question instead of picking an interpretation.
 
-Every design decision flows from this. The system doesn't generate answers from its training data — it retrieves passages from *your* documentation and synthesizes answers grounded exclusively in that context. When it can't find a good answer, it says so. When it's not confident, it flags that. When the question is outside its domain, it redirects. When the situation requires a human, it escalates.
+**Swap anything.** Every external dependency (LLM, embeddings, vector store, reranker, keyword search) sits behind a Python `Protocol`. Switching providers is a config change, not a code change. The system is a framework designed for deployment across different products and organizations.
 
-This isn't a chatbot with a knowledge base bolted on. It's a **retrieval system with a language model for synthesis** — and the distinction matters.
-
-## What It Does
-
-Upload your technical documentation — PDFs, markdown, web pages — and Sophia indexes it into a searchable knowledge base. Customers ask questions in natural language. The system retrieves the most relevant passages using hybrid search, re-ranks them for precision, assesses its own confidence, and generates a grounded response with source citations.
-
-The entire pipeline is observable, auditable, and configurable per deployment.
+**Observe everything.** The full pipeline — retrieval scores, reranker output, confidence classification, LLM generation — is traced through LangFuse. User feedback (thumbs up/down) creates a continuous quality signal.
 
 ---
 
@@ -110,7 +92,7 @@ graph TB
 
 ## RAG Pipeline
 
-Every query follows the same deliberate path from question to answer. No shortcuts, no guessing.
+Query flow from input to response:
 
 ```mermaid
 flowchart LR
@@ -151,7 +133,7 @@ flowchart LR
 
 ### Confidence Tiers
 
-The system's response behavior changes based on how confident it is in the retrieved context:
+Response behavior is determined by confidence tier:
 
 | Tier | Condition | System Behavior |
 |:---|:---|:---|
@@ -168,7 +150,7 @@ All thresholds are configurable per deployment via YAML.
 
 ## Provider Abstraction
 
-Every external dependency is accessed through a Python `Protocol` — structural subtyping with no base class inheritance. Implementations are decoupled and swappable via configuration.
+Every external dependency is behind a Python `Protocol` (structural subtyping, no base class inheritance). Implementations are swappable via config.
 
 ```mermaid
 graph LR
@@ -221,7 +203,7 @@ graph LR
     class L1,E1,E2,V1,V2,V3,R1,R2,K1 impl
 ```
 
-Switching from pgvector to Qdrant, or from a local cross-encoder to Cohere Rerank, is a one-line config change:
+Swap providers via config — factory wires the correct implementation at startup:
 
 ```yaml
 # .env
@@ -229,26 +211,19 @@ VECTORSTORE_PROVIDER=qdrant
 RERANKER_PROVIDER=cohere
 ```
 
-No code changes. No redeployment of the pipeline. The factory reads config and wires the correct implementation at startup.
-
 ---
 
-## Safety & Guardrails
+## Guardrails
 
-The system enforces safety at multiple layers — not just in the prompt.
+Safety is enforced at three layers, not just the prompt:
 
-**Retrieval-level enforcement:** If the retrieval pipeline returns nothing above the minimum relevance threshold, the system doesn't call the LLM at all. It returns a redirect message directly. The LLM never gets a chance to use its general knowledge to hallucinate an answer.
+1. **Retrieval gate** — If no results exceed the minimum relevance threshold, the LLM is never called. The system returns a deterministic redirect message. No retrieval context means no generation.
 
-**Prompt-level guardrails (locked, non-overridable):**
-- Only answers from provided context — never from training data
-- Asks clarifying questions when the query is ambiguous — never guesses
-- Cites sources for every claim
-- Stays strictly in its domain — refuses off-topic requests
-- Resists prompt injection — politely declines instruction override attempts
+2. **Confidence routing** — Only ANSWER and CAVEAT tiers invoke the LLM. DECLINE, ESCALATE, AMBIGUOUS, and OFF_TOPIC are handled with pre-written responses — the LLM is not in the loop.
 
-**Confidence-gated generation:** The LLM is only invoked for ANSWER and CAVEAT tiers. DECLINE, ESCALATE, AMBIGUOUS, and OFF_TOPIC are all handled with pre-written, deterministic responses. This means ~40% of queries (off-topic, low-confidence) never touch the LLM and therefore *cannot* hallucinate.
+3. **Prompt constraints** — The persona template includes locked, non-overridable rules: answer only from provided context, cite sources, ask when ambiguous, refuse off-topic requests, resist instruction override attempts.
 
-**Escalation webhook:** When the system encounters something it can't handle, it dispatches a structured webhook to your support infrastructure — Zendesk, Jira, Slack, or any HTTP endpoint. The webhook includes the full session context so the human agent has everything they need.
+**Escalation** dispatches a structured webhook (session context + query + reason) to any HTTP endpoint — Zendesk, Jira, Slack, or a custom handler.
 
 ---
 
@@ -270,9 +245,9 @@ flowchart LR
     style EMBED fill:#e8f5e9,stroke:#4CAF50
 ```
 
-The ingestion pipeline runs asynchronously via an arq worker queue. Upload a document through the API or UI, and it's processed in the background — loaded, cleaned, chunked, embedded, and indexed across all search backends.
+Ingestion runs asynchronously via an arq worker queue. Documents are processed in the background — loaded, cleaned, chunked, embedded, and indexed across all search backends.
 
-**Loader plugin system:** Each document format has a registered `DocumentLoader`. Adding support for a new format means implementing one protocol method and registering it — the pipeline handles the rest.
+Each document format has a registered `DocumentLoader`. Adding a new format means implementing one protocol method and registering it.
 
 | Format | Loader | Status |
 |:---|:---|:---|
@@ -289,20 +264,18 @@ The ingestion pipeline runs asynchronously via an arq worker queue. Upload a doc
 
 ## Frontend
 
-A clean, functional React interface built for the people who actually use support tools.
-
-### Chat Interface
-Real-time streaming responses via Server-Sent Events. Answers appear token-by-token as they're generated.
+### Chat
+Streaming responses via SSE. Answers render token-by-token.
 
 <img src="chat-page.png" alt="Chat interface" width="100%" />
 
-### Knowledge Base Management
-Upload documents, add URLs, track ingestion status. Every document shows its chunk count so you know how deeply it's been indexed.
+### Knowledge Base
+Upload documents, add URLs, track ingestion status and chunk counts.
 
 <img src="resources-page.png" alt="Knowledge base" width="100%" />
 
-### Pipeline Test Panel
-Pre-defined test suites to validate pipeline behavior across all confidence tiers. Each test shows the expected tier, actual tier, response time, and full response with source citations.
+### Test Panel
+Pre-defined test suites validate pipeline behavior across all confidence tiers.
 
 <img src="test-page.png" alt="Test panel" width="100%" />
 
@@ -312,14 +285,10 @@ Pre-defined test suites to validate pipeline behavior across all confidence tier
 
 ## Deployment
 
-### One-Command Deploy
-
 ```bash
-cp .env.example .env    # Configure your API keys and settings
-make deploy             # Build, start, migrate, and ingest sample docs
+cp .env.example .env    # Configure API keys and settings
+make deploy             # Build, start, migrate, ingest sample docs
 ```
-
-That's it. The system comes up with PostgreSQL (pgvector), Redis, the API server, background worker, frontend, and optionally LangFuse for observability.
 
 ### Service Topology
 
@@ -361,9 +330,9 @@ The system uses a two-layer config architecture:
 
 Environment variables always take precedence. YAML provides deployment-specific behavior configuration.
 
-### Persona Configuration
+### Persona
 
-Each deployment gets its own persona — company name, product scope, tone, and response templates. The system prompt is a Jinja2 template with locked guardrails that cannot be overridden:
+Each deployment defines its persona in YAML — company name, product scope, tone, response templates. The system prompt is a Jinja2 template with locked guardrails:
 
 ```yaml
 # backend/config/persona/default.yaml
@@ -399,19 +368,13 @@ system_prompt: |
 
 ---
 
-## Designed For Extension
+## Extension Points
 
-Sophia is a framework, not just an application. It's built to be deployed across multiple products and organizations.
-
-**Add a new document format** — Implement one `DocumentLoader` protocol method, register it. The ingestion pipeline handles the rest.
-
-**Swap any provider** — Change a single environment variable. pgvector to Qdrant. Local embeddings to OpenAI. Cross-encoder to Cohere. No code changes.
-
-**Customize per deployment** — Company name, product scope, tone, confidence thresholds, escalation targets — all in YAML config. One codebase, many deployments.
-
-**Add a voice interface** — The `/voice/stream` endpoint buffers tokens into complete sentences for TTS consumption. LiveKit, Twilio, or any voice framework can consume it directly.
-
-**Go multi-tenant** — The schema is designed for tenant isolation (add `tenant_id` + Row-Level Security). The provider interfaces already accept filter parameters. It's a migration, not a rewrite.
+- **New document format** — Implement `DocumentLoader` protocol, register it. Pipeline handles the rest.
+- **Swap provider** — Change one env var. pgvector to Qdrant, local embeddings to OpenAI, cross-encoder to Cohere.
+- **Per-deployment config** — Company, product, tone, thresholds, escalation targets — all YAML. One codebase, many deployments.
+- **Voice interface** — `/voice/stream` buffers tokens into complete sentences for TTS consumption (LiveKit, Twilio, etc.).
+- **Multi-tenant** — Schema is designed for `tenant_id` + Row-Level Security. Provider interfaces already accept filter parameters.
 
 ---
 
