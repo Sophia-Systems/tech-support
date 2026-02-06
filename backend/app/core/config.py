@@ -97,6 +97,7 @@ class IngestionSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="INGESTION_", env_file=_ENV_FILE, extra="ignore")
 
     allowed_base_dir: str = ""
+    max_upload_size_mb: int = 50
 
 
 class AppSettings(BaseSettings):

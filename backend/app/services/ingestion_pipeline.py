@@ -145,3 +145,13 @@ async def enqueue_ingestion(document_id: str) -> None:
             error=str(e),
         )
         # Fallback: run inline if Redis isn't available (dev convenience)
+        from app.db.engine import get_session_factory
+        from app.dependencies import get_embedding_provider
+
+        session_factory = get_session_factory()
+        async with session_factory() as db:
+            pipeline = IngestionPipeline(
+                embedding_provider=get_embedding_provider(), db=db
+            )
+            await pipeline.ingest(document_id)
+        log.info("ingestion_completed_inline", document_id=document_id)
