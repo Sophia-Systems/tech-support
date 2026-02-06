@@ -14,6 +14,7 @@ from app.providers.base import (
 )
 
 
+@lru_cache(maxsize=1)
 def get_llm_provider() -> LLMProvider:
     from app.providers.llm.litellm_provider import LiteLLMProvider
 
@@ -27,6 +28,7 @@ def get_llm_provider() -> LLMProvider:
     )
 
 
+@lru_cache(maxsize=1)
 def get_embedding_provider() -> EmbeddingProvider:
     settings = get_settings()
     if settings.embedding.provider == "sentence-transformers":
@@ -48,13 +50,15 @@ def get_embedding_provider() -> EmbeddingProvider:
         )
 
 
+@lru_cache(maxsize=1)
 def get_vector_store() -> VectorStoreProvider:
+    from app.db.engine import get_session_factory
     from app.providers.vectorstore.pgvector_store import PgVectorStore
 
-    settings = get_settings()
-    return PgVectorStore(dsn=settings.postgres.async_url)
+    return PgVectorStore(session_factory=get_session_factory())
 
 
+@lru_cache(maxsize=1)
 def get_reranker() -> RerankerProvider:
     settings = get_settings()
     if settings.reranker.provider == "cohere":
@@ -67,13 +71,15 @@ def get_reranker() -> RerankerProvider:
         return CrossEncoderReranker(model_name=settings.reranker.model)
 
 
+@lru_cache(maxsize=1)
 def get_keyword_search() -> KeywordSearchProvider:
+    from app.db.engine import get_session_factory
     from app.providers.keyword_search.postgres_fts import PostgresFTSProvider
 
-    settings = get_settings()
-    return PostgresFTSProvider(dsn=settings.postgres.async_url)
+    return PostgresFTSProvider(session_factory=get_session_factory())
 
 
+@lru_cache(maxsize=1)
 def get_rag_pipeline():
     from app.services.rag_pipeline import RAGPipeline
 

@@ -93,6 +93,12 @@ class EscalationSettings(BaseSettings):
     webhook_url: str = ""
 
 
+class IngestionSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="INGESTION_", env_file=_ENV_FILE, extra="ignore")
+
+    allowed_base_dir: str = ""
+
+
 class AppSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="APP_", env_file=_ENV_FILE, extra="ignore")
 
@@ -100,6 +106,7 @@ class AppSettings(BaseSettings):
     debug: bool = False
     log_level: str = "INFO"
     cors_origins: list[str] = Field(default=["http://localhost:5173"])
+    api_key: str = ""
 
 
 class RetrievalConfig:
@@ -151,6 +158,7 @@ class Settings:
         self.vectorstore = VectorStoreSettings()
         self.langfuse = LangFuseSettings()
         self.escalation = EscalationSettings()
+        self.ingestion = IngestionSettings()
 
         yaml_data = _load_yaml(_CONFIG_DIR / "default.yaml")
         self.retrieval = RetrievalConfig(yaml_data.get("retrieval"))

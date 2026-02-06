@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import re
-from pathlib import Path
 
 from app.ingestion.loaders.base import LoadedDocument
+from app.ingestion.loaders.path_validator import validate_file_path
 
 
 class MarkdownLoader:
@@ -14,7 +14,7 @@ class MarkdownLoader:
         return [".md", ".markdown"]
 
     def load(self, source_uri: str) -> list[LoadedDocument]:
-        path = Path(source_uri)
+        path = validate_file_path(source_uri)
         if not path.exists():
             raise FileNotFoundError(f"Markdown file not found: {source_uri}")
 
