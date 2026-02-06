@@ -37,9 +37,11 @@ def get_loader(source_type: str) -> DocumentLoader:
 def _register_defaults():
     from app.ingestion.loaders.markdown_loader import MarkdownLoader
     from app.ingestion.loaders.pdf_loader import PDFLoader
+    from app.ingestion.loaders.web_loader import WebLoader
 
     register_loader("markdown", MarkdownLoader)
     register_loader("pdf", PDFLoader)
+    register_loader("web", WebLoader)
 
 
 _register_defaults()
