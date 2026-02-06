@@ -1,5 +1,5 @@
 <p align="center">
-  <strong>SOPHIA</strong><br>
+  <strong>TECH SUPPORT</strong><br>
   <em>Structured Omnichannel Platform for Helpful Intelligent Assistance</em>
 </p>
 
