@@ -50,6 +50,11 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    if settings.app.api_key:
+        from app.middleware.auth import APIKeyMiddleware
+
+        app.add_middleware(APIKeyMiddleware, api_key=settings.app.api_key)
+
     app.include_router(api_router)
 
     return app

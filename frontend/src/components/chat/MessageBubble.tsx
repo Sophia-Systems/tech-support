@@ -37,7 +37,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             <p>{message.content}</p>
           ) : (
             <div className="prose prose-sm max-w-none dark:prose-invert">
-              <ReactMarkdown>{message.content}</ReactMarkdown>
+              <ReactMarkdown
+                allowedElements={[
+                  "p", "br", "strong", "em", "del", "code",
+                  "h1", "h2", "h3", "h4",
+                  "ul", "ol", "li", "blockquote", "pre",
+                  "a", "table", "thead", "tbody", "tr", "th", "td",
+                ]}
+              >
+                {message.content}
+              </ReactMarkdown>
               {message.isStreaming && (
                 <span className="ml-0.5 inline-block h-4 w-1 animate-pulse bg-foreground/70" />
               )}

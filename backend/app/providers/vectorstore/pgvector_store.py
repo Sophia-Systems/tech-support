@@ -2,18 +2,15 @@
 
 from __future__ import annotations
 
-import uuid
-
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.providers.base import VectorSearchResult
 
 
 class PgVectorStore:
-    def __init__(self, dsn: str):
-        self._engine = create_async_engine(dsn, pool_size=5)
-        self._session_factory = async_sessionmaker(self._engine, class_=AsyncSession)
+    def __init__(self, session_factory: async_sessionmaker[AsyncSession]):
+        self._session_factory = session_factory
 
     async def upsert(
         self,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import math
 
 from app.providers.base import RerankResult
 
@@ -33,7 +34,11 @@ class CrossEncoderReranker:
         scores = await asyncio.to_thread(model.predict, pairs)
 
         results = [
-            RerankResult(index=i, score=float(scores[i]), text=documents[i])
+            RerankResult(
+                index=i,
+                score=1.0 / (1.0 + math.exp(-float(scores[i]))),
+                text=documents[i],
+            )
             for i in range(len(documents))
         ]
         results.sort(key=lambda r: r.score, reverse=True)
