@@ -1,22 +1,29 @@
 # Tech Support
 
-Production RAG framework for technical customer support. Ingests documentation (PDF, markdown, web), answers questions grounded in that documentation, and escalates to humans when it can't.
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.12+-blue?style=flat-square" alt="Python" />
+  <img src="https://img.shields.io/badge/fastapi-0.115+-009688?style=flat-square" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/react-19-61dafb?style=flat-square" alt="React" />
+  <img src="https://img.shields.io/badge/postgres-pgvector-336791?style=flat-square" alt="pgvector" />
+</p>
 
-Python 3.12 / FastAPI / React 19 / PostgreSQL (pgvector) / Docker
+Production RAG framework for technical customer support. Ingests documentation (PDF, markdown, web), answers questions grounded exclusively in that documentation, and escalates to humans when it can't. Built as a deployable framework — one codebase serves multiple products and organizations via configuration.
 
 ---
 
 ## Design Principles
 
-**Say "I don't know."** The system is a retrieval pipeline with an LLM for synthesis — not a chatbot with a knowledge base bolted on. It only generates answers from retrieved context. When retrieval confidence is low, it declines or escalates rather than letting the LLM improvise. This is the foundational constraint; every other decision follows from it.
+**Protocol-driven provider abstraction.** Every external dependency — LLM, embeddings, vector store, reranker, keyword search — is accessed through a Python `Protocol` (structural subtyping, no base class inheritance). Implementations are fully decoupled from the pipeline that consumes them. Switching from pgvector to Qdrant, or from a local cross-encoder to Cohere Rerank, is a config change. The core pipeline code never imports a concrete provider.
 
-**Stay in your lane.** The bot is topic-fenced to its knowledge base. Off-topic queries get a redirect, not a general-knowledge answer. Prompt injection attempts get a polite refusal. The LLM is never invoked without grounding context, so it has no opportunity to hallucinate from training data.
+**Configuration over code.** Deployment-specific behavior lives in config, not source. Two layers: environment variables (secrets, infrastructure) via `pydantic-settings`, and YAML files (retrieval tuning, confidence thresholds, persona templates). A new deployment means a new config directory, not a fork.
 
-**Ask, don't guess.** When a query is ambiguous — maps to multiple topics with similar relevance scores — the system asks a clarifying question instead of picking an interpretation.
+**Modular pipeline stages.** The RAG pipeline is a sequence of discrete, independently testable stages — query rewrite, semantic search, keyword search, fusion, reranking, confidence scoring, generation. Each stage has a clear input/output contract. Stages can be skipped, replaced, or reordered without touching adjacent code.
 
-**Swap anything.** Every external dependency (LLM, embeddings, vector store, reranker, keyword search) sits behind a Python `Protocol`. Switching providers is a config change, not a code change. The system is a framework designed for deployment across different products and organizations.
+**Plugin-based ingestion.** Document loaders, chunking strategies, and text processors are registered via a plugin pattern. Adding a new document format means implementing one protocol method and registering it — the ingestion orchestrator handles sequencing, error handling, and storage.
 
-**Observe everything.** The full pipeline — retrieval scores, reranker output, confidence classification, LLM generation — is traced through LangFuse. User feedback (thumbs up/down) creates a continuous quality signal.
+**Design for the next requirement.** Single-tenant now, but every table is ready for `tenant_id` + Row-Level Security. Session-based conversation now, but the session manager interface supports persistent memory. Chat-first, but the streaming API is structured for voice consumption (sentence-buffered SSE). The architecture accommodates these without refactoring — they're migrations, not rewrites.
+
+**Fail safe, not fail silent.** The system prefers "I don't know" over hallucination. Confidence-tiered routing means the LLM is only invoked when retrieval quality is high. Low-confidence, ambiguous, off-topic, and escalation paths are all handled with deterministic responses — no generation, no risk. The pipeline is fully traced through LangFuse, and user feedback creates a continuous quality signal.
 
 ---
 
