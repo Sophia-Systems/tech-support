@@ -85,6 +85,37 @@ down: ## Stop all services
 logs: ## Tail logs for all services
 	docker compose logs -f
 
+# === Deploy ===
+
+deploy: ## Build and deploy full production stack
+	@test -f .env || { echo "ERROR: .env file not found. Copy .env.example and fill in your values:\n  cp .env.example .env"; exit 1; }
+	docker compose up -d --build
+	@echo "Waiting for postgres to be ready..."
+	@until docker compose exec -T postgres pg_isready -U $${POSTGRES_USER:-csbot} > /dev/null 2>&1; do sleep 1; done
+	@echo "Running migrations..."
+	docker compose exec -T api uv run alembic upgrade head
+	@echo "Ingesting sample docs..."
+	docker compose exec -T api uv run python scripts/ingest_sample_docs.py
+	@echo ""
+	@echo "Deploy complete!"
+	@echo "  Frontend: http://$$(hostname):$${FRONTEND_PORT:-3000}"
+	@echo "  API:      http://$$(hostname):$${API_PORT:-8000}"
+	@echo "  Langfuse: http://$$(hostname):$${LANGFUSE_PORT:-3100}"
+
+deploy-no-langfuse: ## Deploy without Langfuse
+	@test -f .env || { echo "ERROR: .env file not found. Copy .env.example and fill in your values:\n  cp .env.example .env"; exit 1; }
+	docker compose up -d --build postgres redis api worker frontend
+	@echo "Waiting for postgres to be ready..."
+	@until docker compose exec -T postgres pg_isready -U $${POSTGRES_USER:-csbot} > /dev/null 2>&1; do sleep 1; done
+	@echo "Running migrations..."
+	docker compose exec -T api uv run alembic upgrade head
+	@echo "Ingesting sample docs..."
+	docker compose exec -T api uv run python scripts/ingest_sample_docs.py
+	@echo ""
+	@echo "Deploy complete!"
+	@echo "  Frontend: http://$$(hostname):$${FRONTEND_PORT:-3000}"
+	@echo "  API:      http://$$(hostname):$${API_PORT:-8000}"
+
 # === Maintenance ===
 
 clean: ## Clean build artifacts

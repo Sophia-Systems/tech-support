@@ -52,6 +52,9 @@ backend/alembic/versions/__pycache__/
 data/manuals/*.pdf
 data/manuals/*.docx
 
+# Playwright MCP
+.playwright-mcp/
+
 # uv
 *.lock
 !uv.lock

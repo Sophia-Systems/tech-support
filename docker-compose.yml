@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-csbot}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -18,7 +18,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redisdata:/data
     healthcheck:
@@ -47,7 +47,7 @@ services:
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
       APP_ENV: production
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -78,7 +78,7 @@ services:
       context: frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:80"
+      - "${FRONTEND_PORT:-3000}:80"
     depends_on:
       - api
 
@@ -90,7 +90,7 @@ services:
       NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-changeme-langfuse-secret}
       SALT: ${LANGFUSE_SALT:-changeme-langfuse-salt}
     ports:
-      - "3100:3000"
+      - "${LANGFUSE_PORT:-3100}:3000"
     depends_on:
       postgres:
         condition: service_healthy
