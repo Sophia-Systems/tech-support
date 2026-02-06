@@ -21,11 +21,15 @@ def validate_file_path(source_uri: str) -> Path:
     path = Path(source_uri).resolve()
 
     allowed_base = get_settings().ingestion.allowed_base_dir
-    if allowed_base:
-        base = Path(allowed_base).resolve()
-        if not path.is_relative_to(base):
-            raise PathTraversalError(
-                f"Path {path} is outside allowed base directory {base}"
-            )
+    if not allowed_base:
+        raise PathTraversalError(
+            "INGESTION_ALLOWED_BASE_DIR must be set to allow file ingestion"
+        )
+
+    base = Path(allowed_base).resolve()
+    if not path.is_relative_to(base):
+        raise PathTraversalError(
+            f"Path {path} is outside allowed base directory {base}"
+        )
 
     return path

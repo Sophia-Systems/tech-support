@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hmac
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -25,7 +27,7 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         provided = request.headers.get("X-API-Key", "")
-        if provided != self._api_key:
+        if not hmac.compare_digest(provided, self._api_key):
             return JSONResponse(
                 status_code=401,
                 content={"detail": "Invalid or missing API key"},
